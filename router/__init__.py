@@ -1,6 +1,7 @@
 from starlette import status
 from fastapi import APIRouter, Request
 
+from service import crawl_img
 # from .middleware import RequestHandlingMiddleware
 
 
@@ -8,11 +9,12 @@ api_router = APIRouter()
 
 
 @api_router.get(
-    "/test",
+    "/crawl",
     status_code=status.HTTP_200_OK,
     # response_model=GridRawDataResponse
 )
-def test(request: Request):
+def crawl(request: Request, event_name: str):
+    title, url = crawl_img(event_name)
 
-    return dict(data=123)
+    return dict(name=title, img=url)
 
