@@ -8,11 +8,11 @@ from selenium.webdriver.chrome.options import Options
 
 
 def crawl_img(event_name):
-    options = webdriver.FirefoxOptions()
+    options = webdriver.ChromeOptions()
     options.add_argument('--headless')
     options.add_argument('--disable-notifications')
 
-    chrome = webdriver.Firefox(options=options)
+    chrome = webdriver.Chrome(options=options)
     chrome.get("https://maplestory.beanfun.com/main")
     chrome.execute_script("window.scrollTo(0,document.body.scrollHeight)")
     soup = BeautifulSoup(chrome.page_source, "lxml")
