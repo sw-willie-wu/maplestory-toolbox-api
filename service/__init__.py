@@ -1,39 +1,57 @@
-import time
-from datetime import datetime
+import json
+from urllib import parse
 
+import requests
 from bs4 import BeautifulSoup
-from selenium import webdriver
-from selenium.webdriver.chrome.service import Service
-from selenium.webdriver.chrome.options import Options
 
 
 def crawl_img(event_name):
-    options = webdriver.ChromeOptions()
-    options.add_argument('--headless')
-    options.add_argument('--disable-notifications')
+    event_api = 'https://maplestory.beanfun.com/api/GamaAd/FindAdData?AdType=MainBannerPC'
 
-    chrome = webdriver.Chrome(options=options)
-    chrome.get("https://maplestory.beanfun.com/main")
-    chrome.execute_script("window.scrollTo(0,document.body.scrollHeight)")
-    soup = BeautifulSoup(chrome.page_source, "lxml")
-
-    # get events
-    events = soup.select("a.mBulletin-slide2-item")
+    soup = BeautifulSoup(requests.get(event_api).content, 'lxml')
+    events = json.loads(soup.select('p')[0].string)['listData']
+        
     for event in events:
-        title = event.select("div.mBulletin-slide2-title")[0].get_text().strip().split("】")
-        title[0] = "【" + title[0] if title[0][0] != "【" else title[0]
 
-        if title[0][1:] == event_name: 
-            utime = datetime.strptime(event.select("div.mBulletin-slide2-date")[0].get_text(), '%Y.%m.%d')
-            href = event.get("href")
-            chrome.get(f"{href}")
-            time.sleep(1)
-            chrome.execute_script("window.scrollTo(0,document.body.scrollHeight)")
-            event_page = BeautifulSoup(chrome.page_source, "lxml")
-            img_url = event_page.select("div.mBulletin-content > p > img")[0].get("src")
-            break
+        if event['adName'].strip().split('】')[0][1:] != event_name:
+            continue
+
+        with requests.session() as s:
+            res = s.get(event['adUrl'])
+            head = s.head(event['adUrl'])
+            soup = BeautifulSoup(res.content, 'lxml')
+
+            bid = res.url.split('=')[1]
+            token = soup.select('input[name=__RequestVerificationToken]')[0]['value']
+            form_data = {"Bid":bid}
+            data = parse.urlencode(form_data)
+
+            headers = {
+                # 'Accept': '*/*',
+                # 'Accept-Encoding': 'gzip, deflate, br, zstd',
+                # 'Accept-Language': 'en-US,en;q=0.9,zh-TW;q=0.8,zh;q=0.7',
+                # 'Content-Length': '9',
+                'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+                # 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36',
+                'X-Csrf-Token': token,
+                # 'X-Requested-With': 'XMLHttpRequest'
+            }
+
+            content = s.post(
+                url='https://maplestory.beanfun.com/bulletin?handler=BulletinDetail',
+                data=data,
+                headers=headers
+            )
+
+            data = json.loads(content.text)
+            soup = BeautifulSoup(data['data']['myDataSet']['table']['content'], 'lxml')
+            img_url = soup.select('img')[0]['src']
+        
+        break
             
-            # print(title[1], img_url)
-        time.sleep(1)
-    chrome.quit()
-    return title[1], img_url
+    return {
+        'name': event['adName'].strip().split('】')[1].strip(), 
+        'start_time': event['adsTime'], 
+        'end_time': event['adeTime'], 
+        'img': img_url
+    }

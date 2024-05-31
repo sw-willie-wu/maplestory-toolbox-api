@@ -14,7 +14,6 @@ api_router = APIRouter()
     # response_model=GridRawDataResponse
 )
 def crawl(request: Request, event_name: str):
-    title, url = crawl_img(event_name)
 
-    return dict(name=title, img=url)
+    return crawl_img(event_name)
 
