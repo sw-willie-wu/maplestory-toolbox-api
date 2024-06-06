@@ -1,14 +1,19 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+
 from router import api_router
+# from service import Validator
 
 app = FastAPI(
     version="0.1",
-    debug=False,
-    title='maplestory-toolbox-api',
-    docs_url="/api/docs",
-    openapi_url="/api/openapi.json",
+    debug=True,
+    title='Maplestory Toolbox Api',
+    docs_url=None, 
+    redoc_url=None, 
+    openapi_url = None
+    # docs_url="/docs",
+    # openapi_url="/openapi.json",
 )
 
 origins = ["*"]
@@ -21,10 +26,22 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# app.add_middleware(RequestHandlingMiddleware)
-
 app.include_router(
-    api_router,
-    prefix="/api"
+    api_router
 )
 
+
+# import secrets
+# from fastapi import Depends, FastAPI, HTTPException, status
+# from fastapi.security import HTTPBasic, HTTPBasicCredentials
+# security = HTTPBasic()
+# def get_current_username(credentials: HTTPBasicCredentials = Depends(security)):
+#     correct_username = secrets.compare_digest(credentials.username, "user")
+#     correct_password = secrets.compare_digest(credentials.password, "password")
+#     if not (correct_username and correct_password):
+#         raise HTTPException(
+#             status_code=status.HTTP_401_UNAUTHORIZED,
+#             detail="Incorrect email or password",
+#             headers={"WWW-Authenticate": "Basic"},
+#         )
+#     return credentials.username
