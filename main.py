@@ -1,22 +1,46 @@
+import logging
+from typing import AsyncIterator
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-
+from db import DATABASE
+from config import SETTINGS
 from router import api_router
-# from service import Validator
+
+
+
+LOGGER = logging.getLogger(__name__)
+
+async def startup() -> None:
+    LOGGER.info("APP initializing...")
+    # await DATABASE.migrate()
+
+
+async def shutdown() -> None:
+    LOGGER.info("APP shutdown...")
+
+    await DATABASE.close()
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI) -> AsyncIterator:
+    await startup()
+    yield
+    await shutdown()
+
 
 app = FastAPI(
     version="0.1",
-    debug=True,
-    title='Maplestory Toolbox Api',
-    docs_url=None, 
-    redoc_url=None, 
-    openapi_url = None
-    # docs_url="/docs",
-    # openapi_url="/openapi.json",
+    debug=True if SETTINGS.Mode == 'DEV' else False,
+    title=SETTINGS.Name,
+    lifespan=lifespan,
+    docs_url="/docs",
+    openapi_url="/openapi.json",
 )
 
-origins = ["*"]
+origins = ["maplestory-toolbox.vercel.app"]
 
 app.add_middleware(
     CORSMiddleware,
@@ -29,6 +53,11 @@ app.add_middleware(
 app.include_router(
     api_router
 )
+
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)
 
 
 # import secrets

@@ -4,6 +4,7 @@ from fastapi.openapi.docs import get_swagger_ui_html
 
 from service import Validator
 from router.icon import icon_router
+from router.rune import rune_router
 
 
 api_router = APIRouter()
@@ -12,6 +13,12 @@ api_router.include_router(
     icon_router,
     prefix="/icon",
     tags=["Icon"],
+)
+
+api_router.include_router(
+    rune_router,
+    prefix="/rune",
+    tags=["Rune"],
 )
 
 # @api_router.get("/docs", include_in_schema=False)
